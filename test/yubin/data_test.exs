@@ -3,7 +3,7 @@ defmodule Yubin.DataTest do
 
   setup_all do
     data = "priv/postal.etf" |> File.read!() |> :erlang.binary_to_term()
-    data = %{data | entries: Enum.map(data.entries, fn {code, rows} -> {code, :erlang.binary_to_term(rows)} end)}
+    data = Map.put(data, :entries, Yubin.Table.entries())
     rows = for {code, rows} <- data.entries, row <- rows, do: {code, row}
     %{data: data, rows: rows}
   end
@@ -11,7 +11,7 @@ defmodule Yubin.DataTest do
   defp count(rows, kinds), do: Enum.count(rows, fn {_code, row} -> elem(row, 0) in kinds end)
 
   test "every source row is in the build", %{data: data, rows: rows} do
-    assert data.format == 2
+    assert data.format == 3
     assert count(rows, [:area, :building]) == data.source_rows.ken_all
     assert count(rows, [:business]) == data.source_rows.jigyosyo
     assert length(rows) == data.source_rows.ken_all + data.source_rows.jigyosyo

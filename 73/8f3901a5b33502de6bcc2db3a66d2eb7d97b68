@@ -1,0 +1,26 @@
+mix.exs
+  s_d4ee173cd6f88a::t_cbe5ffbb63eae7 18
+  s_d4ee173cd6f88a::t_e335472a613a06 37-38,43
+  s_d4ee173cd6f88a::t_a87d8572e4e8a8 42,44
+  s_d4ee173cd6f88a::t_4af744bce625cb 45-46
+.github/workflows/test.yml
+  s_d4ee173cd6f88a::t_bcfb73d3c3d306 1-67
+mix.lock
+  s_d4ee173cd6f88a::t_11f37459afc33c 4,6
+---
+{
+  "schema_version": "authorship/3.0.0",
+  "git_ai_version": "1.7.5",
+  "base_commit_sha": "738f3901a5b33502de6bcc2db3a66d2eb7d97b68",
+  "prompts": {},
+  "sessions": {
+    "s_d4ee173cd6f88a": {
+      "agent_id": {
+        "tool": "claude",
+        "id": "d65c5329-b8e0-4635-87e0-54b329a6a429",
+        "model": "claude-opus-5-5"
+      },
+      "human_author": "NexPB <1289189+NexPB@users.noreply.github.com>"
+    }
+  }
+}

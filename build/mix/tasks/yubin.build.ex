@@ -39,6 +39,7 @@ defmodule Mix.Tasks.Yubin.Build do
     """)
   end
 
+  @spec download!(String.t(), String.t()) :: {binary(), Date.t()}
   defp download!(url, name) do
     Mix.shell().info("Downloading #{url}")
     resp = Req.get!(url, decoders: [:zip], http_errors: :raise)
@@ -54,6 +55,7 @@ defmodule Mix.Tasks.Yubin.Build do
   @months ~w(Jan Feb Mar Apr May Jun Jul Aug Sep Oct Nov Dec) |> Enum.with_index(1) |> Map.new()
 
   # RFC 9110 IMF-fixdate, e.g. "Wed, 30 Sep 2026 07:46:52 GMT".
+  @spec last_modified!(Req.Response.t(), String.t()) :: Date.t()
   defp last_modified!(resp, url) do
     with [value] <- Req.Response.get_header(resp, "last-modified"),
          [_weekday, d, mon, y, time, "GMT"] <- String.split(value),
@@ -69,6 +71,7 @@ defmodule Mix.Tasks.Yubin.Build do
     end
   end
 
+  @spec cp932_to_utf8!(binary()) :: String.t()
   defp cp932_to_utf8!(content) do
     path = Path.join(System.tmp_dir!(), "yubin-jigyosyo-#{System.unique_integer([:positive])}.csv")
     File.write!(path, content)

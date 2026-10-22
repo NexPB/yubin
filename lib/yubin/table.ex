@@ -5,6 +5,21 @@ defmodule Yubin.Table do
   @format 3
   @entry_size 7
 
+  @typedoc """
+  The row stored per address: `{kind, prefecture_code, city, city_kana, town, town_kana,
+  note, floor, business_name, street}`.
+  """
+  @type row ::
+          {Yubin.Address.kind(), String.t(), String.t(), String.t() | nil, String.t(), String.t() | nil,
+           String.t() | nil, pos_integer() | nil, String.t() | nil, String.t() | nil}
+
+  @typedoc "The fields of `Yubin.Build.pack/1`."
+  @type data :: %{cities: tuple(), index: binary(), rows: binary()}
+
+  @doc "Returns the version of the `priv/postal.etf` layout that this module reads."
+  @spec format() :: pos_integer()
+  def format, do: @format
+
   @spec load() :: :ok
   def load do
     path = Application.app_dir(:yubin, "priv/postal.etf")
@@ -16,7 +31,7 @@ defmodule Yubin.Table do
   @spec unload() :: boolean()
   def unload, do: :persistent_term.erase(@key)
 
-  @spec rows(String.t()) :: [tuple()]
+  @spec rows(String.t()) :: [row()]
   def rows(code), do: rows(code, :persistent_term.get(@key))
 
   @doc """
@@ -24,7 +39,7 @@ defmodule Yubin.Table do
 
   The strings are sub-binaries of `data.rows`, or literals of `data.cities`.
   """
-  @spec rows(String.t(), map()) :: [tuple()]
+  @spec rows(String.t(), data()) :: [row()]
   def rows(code, %{index: index, rows: packed, cities: cities}) do
     last = div(byte_size(index), @entry_size) - 2
 
@@ -35,7 +50,7 @@ defmodule Yubin.Table do
   end
 
   @doc "Decodes rows packed by `Yubin.Build.pack/1`, with the cities of the same pack."
-  @spec decode(binary(), tuple()) :: [tuple()]
+  @spec decode(binary(), tuple()) :: [row()]
   def decode(<<>>, _cities), do: []
 
   # One pattern per row lets the compiler keep one match context for the whole binary.
@@ -69,7 +84,7 @@ defmodule Yubin.Table do
   end
 
   @doc "Returns every `{code, rows}` in code order."
-  @spec entries() :: [{String.t(), [tuple()]}]
+  @spec entries() :: [{String.t(), [row()]}]
   def entries do
     data = :persistent_term.get(@key)
 
@@ -83,6 +98,8 @@ defmodule Yubin.Table do
   def data_version, do: :persistent_term.get(@key).data_version
 
   # Returns {offset, size} of the rows of the code. An entry's rows end where the next entry's start.
+  @spec search(binary(), non_neg_integer(), integer(), integer()) ::
+          {non_neg_integer(), non_neg_integer()} | nil
   defp search(_index, _code, low, high) when low > high, do: nil
 
   defp search(index, code, low, high) do
@@ -96,9 +113,20 @@ defmodule Yubin.Table do
     end
   end
 
+  @spec nilify(0 | 1, String.t()) :: String.t() | nil
   defp nilify(1, _string), do: nil
   defp nilify(0, string), do: string
 
+  @spec to_row(
+          Yubin.Address.kind(),
+          {String.t(), String.t(), String.t() | nil},
+          String.t(),
+          String.t() | nil,
+          String.t() | nil,
+          pos_integer() | nil,
+          String.t() | nil,
+          String.t() | nil
+        ) :: row()
   defp to_row(kind, {pref, city, city_kana}, town, town_kana, note, floor, name, street) do
     {kind, pref, city, city_kana, town, town_kana, note, floor, name, street}
   end

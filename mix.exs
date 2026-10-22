@@ -20,7 +20,7 @@ defmodule Yubin.MixProject do
   end
 
   def application do
-    [extra_applications: []]
+    [mod: {Yubin.Application, []}, extra_applications: []]
   end
 
   # build/ holds `mix yubin.build` and is not part of the package. The task needs Req, a dev-only dep.

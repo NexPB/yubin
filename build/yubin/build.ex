@@ -6,7 +6,7 @@ defmodule Yubin.Build do
 
   NimbleCSV.define(Yubin.Build.CSV, separator: ",", escape: "\"")
 
-  @format 1
+  @format 2
 
   @typedoc """
   The row stored per address: `{kind, prefecture_code, city, city_kana, town, town_kana,
@@ -60,14 +60,16 @@ defmodule Yubin.Build do
   Encodes the rows into the binary of `priv/postal.etf`.
 
   The term is a map with `:format`, `:data_version`, `:source_rows` (line count of each
-  source file) and `:entries`, a list of `{postal_code, [row]}` sorted by code. Rows keep
-  their source order, area rows first.
+  source file) and `:entries`, a list of `{postal_code, rows}` sorted by code, where `rows`
+  is `[row]` encoded with `:erlang.term_to_binary/2`. Rows keep their source order, area
+  rows first.
   """
   @spec encode([{String.t(), row()}], [{String.t(), row()}], Date.t()) :: binary()
   def encode(ken_all, jigyosyo, %Date{} = data_version) do
     entries =
       (ken_all ++ jigyosyo)
       |> Enum.group_by(&elem(&1, 0), &elem(&1, 1))
+      |> Enum.map(fn {code, rows} -> {code, :erlang.term_to_binary(rows, [:deterministic])} end)
       |> Enum.sort()
 
     term = %{

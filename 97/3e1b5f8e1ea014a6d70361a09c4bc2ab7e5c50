@@ -1,0 +1,21 @@
+.github/workflows/publish.yml
+  s_ed7f0fe0eb291e::t_effe03f7090dbe 1-41
+.github/workflows/test.yml
+  s_ed7f0fe0eb291e::t_206aa25cffdb3d 7
+---
+{
+  "schema_version": "authorship/3.0.0",
+  "git_ai_version": "1.7.5",
+  "base_commit_sha": "973e1b5f8e1ea014a6d70361a09c4bc2ab7e5c50",
+  "prompts": {},
+  "sessions": {
+    "s_ed7f0fe0eb291e": {
+      "agent_id": {
+        "tool": "claude",
+        "id": "da5e44c6-f4a2-4897-b7e6-a34336c1c01c",
+        "model": "claude-opus-5-5"
+      },
+      "human_author": "NexPB <1289189+NexPB@users.noreply.github.com>"
+    }
+  }
+}

@@ -1,0 +1,26 @@
+lib/yubin.ex
+  s_d4ee173cd6f88a::t_02038d42164956 79,83,86,88,93,96
+  s_d4ee173cd6f88a::t_53d3e3d95d09bc 22-25,27-28,33,42,44
+  s_d4ee173cd6f88a::t_883d5247de8d44 57,67,71,73
+bench/decisions.exs
+  s_d4ee173cd6f88a::t_7b2967ecc2952b 181
+test/yubin_test.exs
+  s_d4ee173cd6f88a::t_4083fbaa9c0210 44
+  s_d4ee173cd6f88a::t_574c9487991528 57,63
+---
+{
+  "schema_version": "authorship/3.0.0",
+  "git_ai_version": "1.7.5",
+  "base_commit_sha": "38b87dcc1742c79bb7dd418263bebfdebcd795cf",
+  "prompts": {},
+  "sessions": {
+    "s_d4ee173cd6f88a": {
+      "agent_id": {
+        "tool": "claude",
+        "id": "d65c5329-b8e0-4635-87e0-54b329a6a429",
+        "model": "claude-opus-5-5"
+      },
+      "human_author": "NexPB <1289189+NexPB@users.noreply.github.com>"
+    }
+  }
+}

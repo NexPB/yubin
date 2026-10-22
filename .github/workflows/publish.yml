@@ -1,0 +1,41 @@
+name: Publish
+
+on:
+  push:
+    tags: ["v*"]
+
+permissions:
+  contents: read
+
+jobs:
+  test:
+    uses: ./.github/workflows/test.yml
+
+  publish:
+    name: Publish to Hex
+    needs: test
+    runs-on: ubuntu-24.04
+    timeout-minutes: 15
+    env:
+      MIX_ENV: dev
+    steps:
+      - uses: actions/checkout@v7
+
+      - uses: erlef/setup-beam@v1
+        with:
+          version-file: mise.toml
+          version-type: strict
+
+      - run: mix deps.get
+
+      - name: Check the tag matches the version in mix.exs
+        run: |
+          version=$(mix run --no-start --no-compile -e 'IO.puts(Mix.Project.config()[:version])')
+          if [ "v$version" != "$GITHUB_REF_NAME" ]; then
+            echo "::error::Tag $GITHUB_REF_NAME does not match version $version in mix.exs"
+            exit 1
+          fi
+
+      - run: mix hex.publish --yes
+        env:
+          HEX_API_KEY: ${{ secrets.HEX_API_KEY }}

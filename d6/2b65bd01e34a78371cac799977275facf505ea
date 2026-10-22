@@ -1,0 +1,42 @@
+build/yubin/build.ex
+  s_d10d5c1a0e8760::t_7932a91685f440 9,63-65,72
+lib/yubin/application.ex
+  s_d10d5c1a0e8760::t_d2c9231c5de379 1-10
+lib/yubin/table.ex
+  s_d10d5c1a0e8760::t_02bf48ffbf09b2 11
+  s_d10d5c1a0e8760::t_d386a35149576e 1-10,12-33
+mix.exs
+  s_d10d5c1a0e8760::t_84bf2a690510b1 23
+test/yubin/data_test.exs
+  s_d10d5c1a0e8760::t_755c10a4e68172 6
+  s_d10d5c1a0e8760::t_ac8c483e6adb8e 14
+lib/yubin.ex
+  s_d10d5c1a0e8760::t_85dc5becd44b37 95
+  s_d10d5c1a0e8760::t_9bb8d568bc5e91 20
+  s_d10d5c1a0e8760::t_159dabe7f20692 6-9,11,13-19,21-23,30-47,49-56,58-63,68-74,80-94,96-111
+  s_d10d5c1a0e8760::t_1414c2f2772d3f 64-67,75-79
+  s_d10d5c1a0e8760::t_743b5fbe0718b3 48
+  s_d10d5c1a0e8760::t_0dbf287c5004dd 10,12
+  s_d10d5c1a0e8760::t_36382ad94143c3 27-29
+  s_d10d5c1a0e8760::t_a55985d0ee4d7b 24-26
+test/yubin_test.exs
+  s_d10d5c1a0e8760::t_d6c6445c92b50c 15
+  s_d10d5c1a0e8760::t_a55985d0ee4d7b 134-137
+  s_d10d5c1a0e8760::t_5e20bcdfb0050a 1-14,16-133,138-143
+---
+{
+  "schema_version": "authorship/3.0.0",
+  "git_ai_version": "1.7.5",
+  "base_commit_sha": "d62b65bd01e34a78371cac799977275facf505ea",
+  "prompts": {},
+  "sessions": {
+    "s_d10d5c1a0e8760": {
+      "agent_id": {
+        "tool": "claude",
+        "id": "e40597ce-6fe0-479f-8568-f8d98b2f0692",
+        "model": "claude-opus-5-5"
+      },
+      "human_author": "NexPB <1289189+NexPB@users.noreply.github.com>"
+    }
+  }
+}

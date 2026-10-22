@@ -20,7 +20,7 @@ defmodule Yubin.MixProject do
   end
 
   def application do
-    [extra_applications: []]
+    [mod: {Yubin.Application, []}, extra_applications: []]
   end
 
   # build/ holds `mix yubin.build` and is not part of the package. The task needs Req, a dev-only dep.
@@ -32,7 +32,8 @@ defmodule Yubin.MixProject do
     [
       {:nimble_csv, "~> 1.3", only: [:dev, :test], runtime: false},
       {:req, "~> 0.7.5", only: :dev, runtime: false},
-      {:ex_doc, "~> 0.40", only: :dev, runtime: false}
+      {:ex_doc, "~> 0.40", only: :dev, runtime: false},
+      {:benchee, "~> 1.5", only: [:dev, :test], runtime: false}
     ]
   end
 

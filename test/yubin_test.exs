@@ -10,7 +10,6 @@ defmodule YubinTest do
     end
 
     test "accepts full-width digits" do
-      assert Yubin.normalize("５３０００１") == :error
       assert Yubin.normalize("５３００００１") == {:ok, "530-0001"}
       assert Yubin.normalize("５３０-0001") == {:ok, "530-0001"}
       assert Yubin.normalize("５３０－０００１") == {:ok, "530-0001"}
@@ -42,6 +41,7 @@ defmodule YubinTest do
             "〒",
             "530-001",
             "530000",
+            "５３０００１",
             "53000011",
             "530-00011",
             "530--0001",
@@ -54,13 +54,13 @@ defmodule YubinTest do
             "530_0001",
             <<0xFF, 0xFE>>
           ] do
-        assert Yubin.normalize(input) == :error, inspect(input)
+        assert Yubin.normalize(input) == {:error, :invalid}, inspect(input)
       end
     end
 
     test "rejects non-strings" do
       for input <- [nil, 5_300_001, ~c"5300001", :"530-0001"] do
-        assert Yubin.normalize(input) == :error
+        assert Yubin.normalize(input) == {:error, :invalid}
       end
     end
   end

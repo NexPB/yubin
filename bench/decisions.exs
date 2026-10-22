@@ -178,7 +178,7 @@ defmodule Bench.Parse do
     |> case do
       <<area::binary-size(3), ?-, number::binary-size(4)>> -> {:ok, area <> "-" <> number}
       <<area::binary-size(3), number::binary-size(4)>> -> {:ok, area <> "-" <> number}
-      _ -> :error
+      _ -> {:error, :invalid}
     end
   end
 end

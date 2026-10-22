@@ -19,22 +19,18 @@ defmodule Yubin do
   """
   @spec lookup(term()) :: {:ok, [Address.t(), ...]} | {:error, :not_found | :invalid}
   def lookup(input) do
-    with {:ok, code} <- parse(input) do
-      case Yubin.Table.rows(code) do
-        [] ->
-          {:error, :not_found}
-
-        rows ->
-          postal_code = format(code)
-          {:ok, Enum.map(rows, &to_address(&1, postal_code))}
-      end
+    with {:ok, code} <- parse(input),
+         [_ | _] = rows <- Yubin.Table.rows(code) do
+      postal_code = format(code)
+      {:ok, Enum.map(rows, &to_address(&1, postal_code))}
     else
-      :error -> {:error, :invalid}
+      {:error, :invalid} = error -> error
+      [] -> {:error, :not_found}
     end
   end
 
   @doc """
-  Returns the postal code in the form `"NNN-NNNN"`, or `:error` when the input is not one.
+  Returns the postal code in the form `"NNN-NNNN"`, or `{:error, :invalid}` when the input is not one.
 
   The input is 7 digits with an optional hyphen after the third. Full-width characters,
   any hyphen or dash, a leading `〒` and spaces are accepted.
@@ -43,9 +39,9 @@ defmodule Yubin do
       {:ok, "530-0001"}
 
       iex> Yubin.normalize("530-001")
-      :error
+      {:error, :invalid}
   """
-  @spec normalize(term()) :: {:ok, String.t()} | :error
+  @spec normalize(term()) :: {:ok, String.t()} | {:error, :invalid}
   def normalize(input) do
     with {:ok, code} <- parse(input), do: {:ok, format(code)}
   end
@@ -58,6 +54,7 @@ defmodule Yubin do
   @spec prefectures() :: [Prefecture.t()]
   defdelegate prefectures(), to: Prefecture, as: :all
 
+  @spec parse(term()) :: {:ok, String.t()} | {:error, :invalid}
   defp parse(input) when is_binary(input) do
     case :unicode.characters_to_nfkc_binary(input) do
       nfkc when is_binary(nfkc) ->
@@ -67,31 +64,36 @@ defmodule Yubin do
         end
 
       _invalid_utf8 ->
-        :error
+        {:error, :invalid}
     end
   end
 
-  defp parse(_input), do: :error
+  defp parse(_input), do: {:error, :invalid}
 
+  @spec compact(String.t(), String.t()) :: String.t()
   defp compact(<<c::utf8, rest::binary>>, acc) when c in @spaces, do: compact(rest, acc)
   defp compact(<<c::utf8, rest::binary>>, acc) when c in @hyphens, do: compact(rest, <<acc::binary, ?->>)
   defp compact(<<c::utf8, rest::binary>>, acc), do: compact(rest, <<acc::binary, c::utf8>>)
   defp compact(<<>>, acc), do: acc
 
+  @spec digits(String.t()) :: {:ok, String.t()} | {:error, :invalid}
   defp digits(<<area::binary-size(3), ?-, number::binary-size(4)>>), do: digits(area <> number)
 
   defp digits(<<_::binary-size(7)>> = code) do
-    if digits?(code), do: {:ok, code}, else: :error
+    if digits?(code), do: {:ok, code}, else: {:error, :invalid}
   end
 
-  defp digits(_input), do: :error
+  defp digits(_input), do: {:error, :invalid}
 
+  @spec digits?(binary()) :: boolean()
   defp digits?(<<c, rest::binary>>) when c in ?0..?9, do: digits?(rest)
   defp digits?(<<>>), do: true
   defp digits?(_), do: false
 
+  @spec format(String.t()) :: String.t()
   defp format(<<area::binary-size(3), number::binary-size(4)>>), do: area <> "-" <> number
 
+  @spec to_address(Yubin.Table.row(), String.t()) :: Address.t()
   defp to_address(row, postal_code) do
     {kind, pref_code, city, city_kana, town, town_kana, note, floor, business_name, street} = row
 

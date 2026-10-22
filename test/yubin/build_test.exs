@@ -196,6 +196,31 @@ defmodule Yubin.BuildTest do
     end
   end
 
+  describe "pack/1" do
+    test "Yubin.Table decodes every row as it was packed" do
+      entries = [
+        {"0010000", [{:area, "01", "札幌市北区", "サッポロシキタク", "", "", nil, nil, nil, nil}]},
+        {"1830000", [{:area, "13", "府中市", "フチュウシ", "町", "マチ", String.duplicate("番", 300), nil, nil, nil}]},
+        {"7260000", [{:area, "34", "府中市", "フチュウシ", "町", "マチ", "", nil, nil, nil}]},
+        {"9806101",
+         [
+           {:building, "04", "仙台市青葉区", "センダイシアオバク", "中央アエル", "チュウオウアエル", nil, 1, nil, nil},
+           {:building, "04", "仙台市青葉区", "センダイシアオバク", "中央アエル", "チュウオウアエル", "高層棟", nil, nil, nil}
+         ]},
+        {"9999999", [{:business, "47", "那覇市", nil, "泉崎", nil, nil, nil, "沖縄県庁", "１丁目２－２"}]}
+      ]
+
+      packed = Yubin.Build.pack(entries)
+
+      for {code, rows} <- entries do
+        assert Yubin.Table.rows(code, packed) == rows
+      end
+
+      assert Yubin.Table.rows("0000000", packed) == []
+      assert Yubin.Table.rows("5000000", packed) == []
+    end
+  end
+
   describe "row counts" do
     test "raise when a quoted newline merges two lines into one row" do
       csv =

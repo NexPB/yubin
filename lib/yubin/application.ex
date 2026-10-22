@@ -5,6 +5,13 @@ defmodule Yubin.Application do
 
   @impl Application
   def start(_type, _args) do
-    Supervisor.start_link([Yubin.Table], strategy: :one_for_one, name: Yubin.Supervisor)
+    :ok = Yubin.Table.load()
+    Supervisor.start_link([], strategy: :one_for_one, name: Yubin.Supervisor)
+  end
+
+  @impl Application
+  def stop(_state) do
+    Yubin.Table.unload()
+    :ok
   end
 end

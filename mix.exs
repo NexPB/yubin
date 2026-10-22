@@ -15,6 +15,7 @@ defmodule Yubin.MixProject do
       description: "Japanese postal code lookup with data bundled from Japan Post.",
       package: package(),
       docs: docs(),
+      dialyzer: dialyzer(),
       source_url: @source_url
     ]
   end
@@ -33,8 +34,14 @@ defmodule Yubin.MixProject do
       {:nimble_csv, "~> 1.3", only: [:dev, :test], runtime: false},
       {:req, "~> 0.7.5", only: :dev, runtime: false},
       {:ex_doc, "~> 0.40", only: :dev, runtime: false},
-      {:benchee, "~> 1.5", only: [:dev, :test], runtime: false}
+      {:benchee, "~> 1.5", only: [:dev, :test], runtime: false},
+      {:dialyxir, "~> 1.4", only: :dev, runtime: false}
     ]
+  end
+
+  # build/ needs Mix and the runtime: false deps in the PLT. The PLTs live in _build so CI caches them.
+  defp dialyzer do
+    [plt_add_apps: [:mix, :nimble_csv, :req], plt_core_path: "_build/plts", plt_local_path: "_build/plts"]
   end
 
   defp package do

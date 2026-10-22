@@ -4,7 +4,7 @@
 #     mix run bench/runtime.exs          # compares with the baseline, e.g. on a branch
 #
 # Results depend on the machine, so bench/results/ is not committed.
-# Exits with status 1 when the median application start is over the 300 ms budget.
+# The budgets that fail CI are in test/yubin/benchmark_test.exs.
 
 defmodule Bench.Runtime do
   # Jobs are module functions: closures in an .exs file run in the evaluator, which is
@@ -48,18 +48,7 @@ Benchee.run(
   ] ++ Bench.Runtime.baseline("api")
 )
 
-%{scenarios: scenarios} =
-  Benchee.run(
-    %{"application start" => &Bench.Runtime.start/0},
-    [before_each: &Bench.Runtime.stop/1, warmup: 1, time: 5] ++ Bench.Runtime.baseline("start")
-  )
-
-{:ok, _} = Application.ensure_all_started(:yubin)
-
-%{run_time_data: %{statistics: %{median: median}}} = Enum.find(scenarios, &is_nil(&1.tag))
-median_ms = median / 1_000_000
-
-if median_ms > 300 do
-  IO.puts(:stderr, "application start median #{Float.round(median_ms, 1)} ms is over the 300 ms budget")
-  System.halt(1)
-end
+Benchee.run(
+  %{"application start" => &Bench.Runtime.start/0},
+  [before_each: &Bench.Runtime.stop/1, warmup: 1, time: 5] ++ Bench.Runtime.baseline("start")
+)

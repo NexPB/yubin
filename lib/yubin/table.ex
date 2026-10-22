@@ -25,11 +25,11 @@ defmodule Yubin.Table do
   The strings are sub-binaries of `data.rows`, or literals of `data.cities`.
   """
   @spec rows(String.t(), map()) :: [tuple()]
-  def rows(code, %{index: index, rows: rows, cities: cities}) do
+  def rows(code, %{index: index, rows: packed, cities: cities}) do
     last = div(byte_size(index), @entry_size) - 2
 
     case search(index, String.to_integer(code), 0, last) do
-      {offset, size} -> decode(binary_part(rows, offset, size), cities)
+      {offset, size} -> decode(binary_part(packed, offset, size), cities)
       nil -> []
     end
   end
@@ -44,7 +44,7 @@ defmodule Yubin.Table do
           kana::binary-size(kana_size), note::binary-size(note_size), rest::binary>>,
         cities
       ) do
-    row = row(:area, elem(cities, city), town, nilify(nil_kana, kana), nilify(nil_note, note), nil, nil, nil)
+    row = to_row(:area, elem(cities, city), town, nilify(nil_kana, kana), nilify(nil_note, note), nil, nil, nil)
     [row | decode(rest, cities)]
   end
 
@@ -54,7 +54,7 @@ defmodule Yubin.Table do
         cities
       ) do
     floor = if floor == 0, do: nil, else: floor
-    row = row(:building, elem(cities, city), town, nilify(nil_kana, kana), nilify(nil_note, note), floor, nil, nil)
+    row = to_row(:building, elem(cities, city), town, nilify(nil_kana, kana), nilify(nil_note, note), floor, nil, nil)
     [row | decode(rest, cities)]
   end
 
@@ -64,7 +64,7 @@ defmodule Yubin.Table do
           street::binary-size(street_size), rest::binary>>,
         cities
       ) do
-    row = row(:business, elem(cities, city), town, nilify(nil_kana, kana), nil, nil, name, street)
+    row = to_row(:business, elem(cities, city), town, nilify(nil_kana, kana), nil, nil, name, street)
     [row | decode(rest, cities)]
   end
 
@@ -99,7 +99,7 @@ defmodule Yubin.Table do
   defp nilify(1, _string), do: nil
   defp nilify(0, string), do: string
 
-  defp row(kind, {pref, city, city_kana}, town, town_kana, note, floor, name, street) do
+  defp to_row(kind, {pref, city, city_kana}, town, town_kana, note, floor, name, street) do
     {kind, pref, city, city_kana, town, town_kana, note, floor, name, street}
   end
 end

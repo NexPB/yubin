@@ -51,14 +51,16 @@ defmodule Mix.Tasks.Yubin.Build do
     end
   end
 
-  @months ~w(Jan Feb Mar Apr May Jun Jul Aug Sep Oct Nov Dec)
+  @months ~w(Jan Feb Mar Apr May Jun Jul Aug Sep Oct Nov Dec) |> Enum.with_index(1) |> Map.new()
 
   # RFC 9110 IMF-fixdate, e.g. "Wed, 30 Sep 2026 07:46:52 GMT".
   defp last_modified!(resp, url) do
     with [value] <- Req.Response.get_header(resp, "last-modified"),
-         [_day, d, mon, y, time, "GMT"] <- String.split(value),
-         m when is_integer(m) <- Enum.find_index(@months, &(&1 == mon)),
-         {:ok, date} <- Date.new(String.to_integer(y), m + 1, String.to_integer(d)),
+         [_weekday, d, mon, y, time, "GMT"] <- String.split(value),
+         {day, ""} <- Integer.parse(d),
+         {:ok, month} <- Map.fetch(@months, mon),
+         {year, ""} <- Integer.parse(y),
+         {:ok, date} <- Date.new(year, month, day),
          {:ok, time} <- Time.from_iso8601(time),
          {:ok, utc} <- NaiveDateTime.new(date, time) do
       utc |> NaiveDateTime.add(9, :hour) |> NaiveDateTime.to_date()

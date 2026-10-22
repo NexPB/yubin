@@ -16,13 +16,13 @@ defmodule Bench.Layout do
 
   # Stores the file of a layout and returns what unload/1 takes: an ETS table named
   # :"bench <layout>", or a persistent term key.
-  def load({"packed", file}) do
-    :persistent_term.put(@packed, file |> :erlang.binary_to_term() |> Map.take([:cities, :index, :rows]))
+  def load({"packed", etf}) do
+    :persistent_term.put(@packed, etf |> :erlang.binary_to_term() |> Map.take([:cities, :index, :rows]))
     @packed
   end
 
-  def load({layout, file}) do
-    data = :erlang.binary_to_term(file)
+  def load({layout, etf}) do
+    data = :erlang.binary_to_term(etf)
     if layout == "rows + cities", do: :persistent_term.put(@cities, data.cities)
     table = :ets.new(:"bench #{layout}", [:set, :protected, :named_table, read_concurrency: true])
     :ets.insert(table, data.entries)
@@ -99,21 +99,21 @@ defmodule Bench.Layout do
       0 -> :ok
     end
 
-    footprint = Enum.zip_with(usage(), before, &(&1 - &2))
+    growth = Enum.zip_with(usage(), before, &(&1 - &2))
     unload(handle)
-    footprint
+    growth
   end
 
   # ETS frees a deleted table after a delay, so this waits until the usage stops changing.
   defp usage(previous \\ nil) do
     Enum.each(Process.list(), &:erlang.garbage_collect/1)
-    usage = [:erlang.memory(:ets), :erlang.memory(:binary), :persistent_term.info().memory]
+    current = [:erlang.memory(:ets), :erlang.memory(:binary), :persistent_term.info().memory]
 
-    if previous && Enum.all?(Enum.zip_with(usage, previous, &abs(&1 - &2)), &(&1 < 65_536)) do
-      usage
+    if previous && Enum.all?(Enum.zip_with(current, previous, &abs(&1 - &2)), &(&1 < 65_536)) do
+      current
     else
       Process.sleep(50)
-      usage(usage)
+      usage(current)
     end
   end
 end
@@ -170,11 +170,12 @@ defmodule Bench.Parse do
   def one_pass(input), do: Yubin.normalize(input)
 
   def string_replace(input) do
-    case input
-         |> :unicode.characters_to_nfkc_binary()
-         |> String.replace(@spaces, "")
-         |> String.replace_prefix("〒", "")
-         |> String.replace(@hyphens, "-") do
+    input
+    |> :unicode.characters_to_nfkc_binary()
+    |> String.replace(@spaces, "")
+    |> String.replace_prefix("〒", "")
+    |> String.replace(@hyphens, "-")
+    |> case do
       <<area::binary-size(3), ?-, number::binary-size(4)>> -> {:ok, area <> "-" <> number}
       <<area::binary-size(3), number::binary-size(4)>> -> {:ok, area <> "-" <> number}
       _ -> :error

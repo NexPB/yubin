@@ -43,8 +43,8 @@ defmodule Yubin.Build do
   with the same names, and are `nil` when those rows have no single reading.
   """
   @spec jigyosyo(binary(), [{String.t(), row()}]) :: [{String.t(), row()}]
-  def jigyosyo(csv, ken_all) do
-    kana = kana_index(ken_all)
+  def jigyosyo(csv, ken_all_rows) do
+    kana = kana_index(ken_all_rows)
 
     csv
     |> parse()
@@ -65,14 +65,14 @@ defmodule Yubin.Build do
   source file) and the fields of `pack/1`. Rows keep their source order, area rows first.
   """
   @spec encode([{String.t(), row()}], [{String.t(), row()}], Date.t()) :: binary()
-  def encode(ken_all, jigyosyo, %Date{} = data_version) do
-    entries = (ken_all ++ jigyosyo) |> Enum.group_by(&elem(&1, 0), &elem(&1, 1)) |> Enum.sort()
+  def encode(ken_all_rows, jigyosyo_rows, %Date{} = data_version) do
+    entries = (ken_all_rows ++ jigyosyo_rows) |> Enum.group_by(&elem(&1, 0), &elem(&1, 1)) |> Enum.sort()
 
     term =
       Map.merge(pack(entries), %{
         format: @format,
         data_version: data_version,
-        source_rows: %{ken_all: length(ken_all), jigyosyo: length(jigyosyo)}
+        source_rows: %{ken_all: length(ken_all_rows), jigyosyo: length(jigyosyo_rows)}
       })
 
     :erlang.term_to_binary(term, [:deterministic, compressed: 9])
@@ -115,13 +115,13 @@ defmodule Yubin.Build do
   end
 
   defp pack_row({:area, pref, city, city_kana, town, town_kana, note, nil, nil, nil}, city_index) do
-    header = <<0::6, nil?(town_kana)::1, nil?(note)::1, city(city_index, pref, city, city_kana)::binary>>
+    header = <<0::6, nil?(town_kana)::1, nil?(note)::1, pack_city(city_index, pref, city, city_kana)::binary>>
     [header, string_size(town), string_size(town_kana), string_size(note, 16), town, town_kana || "", note || ""]
   end
 
   defp pack_row({:building, pref, city, city_kana, town, town_kana, note, floor, nil, nil}, city_index)
        when floor in 1..255 or is_nil(floor) do
-    header = <<1::6, nil?(town_kana)::1, nil?(note)::1, city(city_index, pref, city, city_kana)::binary>>
+    header = <<1::6, nil?(town_kana)::1, nil?(note)::1, pack_city(city_index, pref, city, city_kana)::binary>>
 
     [
       header,
@@ -136,7 +136,7 @@ defmodule Yubin.Build do
   end
 
   defp pack_row({:business, pref, city, city_kana, town, town_kana, nil, nil, name, street}, city_index) do
-    header = <<2::6, nil?(town_kana)::1, 1::1, city(city_index, pref, city, city_kana)::binary>>
+    header = <<2::6, nil?(town_kana)::1, 1::1, pack_city(city_index, pref, city, city_kana)::binary>>
 
     [
       header,
@@ -151,7 +151,7 @@ defmodule Yubin.Build do
     ]
   end
 
-  defp city(city_index, pref, city, city_kana) do
+  defp pack_city(city_index, pref, city, city_kana) do
     case Map.fetch!(city_index, {pref, city, city_kana}) do
       index when index <= 0xFFFF -> <<index::16>>
     end
@@ -185,8 +185,8 @@ defmodule Yubin.Build do
   end
 
   # Maps {pref_code, city} and {pref_code, city, town} to the kana, for names with one reading.
-  defp kana_index(ken_all) do
-    ken_all
+  defp kana_index(ken_all_rows) do
+    ken_all_rows
     |> Enum.reduce(%{}, fn {_code, row}, acc ->
       {_kind, pref, city, city_kana, town, town_kana, _note, _floor, _name, _street} = row
 

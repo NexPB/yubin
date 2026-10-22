@@ -223,6 +223,15 @@ defmodule Yubin.BuildTest do
       assert Yubin.Table.rows("0000000", packed) == []
       assert Yubin.Table.rows("5000000", packed) == []
     end
+
+    test "raises with the code and the field when a string is too long for its size" do
+      name = String.duplicate("株", 86)
+      entries = [{"0608621", [{:business, "01", "札幌市中央区", nil, "北一条西", nil, nil, nil, name, "６丁目"}]}]
+
+      assert_raise RuntimeError, "0608621: business_name is 258 bytes, over the 255 that its size allows", fn ->
+        Yubin.Build.pack(entries)
+      end
+    end
   end
 
   describe "row counts" do

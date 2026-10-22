@@ -5,18 +5,13 @@ defmodule Yubin.Build do
 
   alias Yubin.Build.Cleaner
   alias Yubin.Prefecture
+  alias Yubin.Table
 
   NimbleCSV.define(Yubin.Build.CSV, separator: ",", escape: "\"")
 
-  @format 3
+  @max_cities 0x10000
 
-  @typedoc """
-  The row stored per address: `{kind, prefecture_code, city, city_kana, town, town_kana,
-  note, floor, business_name, street}`.
-  """
-  @type row ::
-          {Yubin.Address.kind(), String.t(), String.t(), String.t() | nil, String.t(), String.t() | nil,
-           String.t() | nil, pos_integer() | nil, String.t() | nil, String.t() | nil}
+  @typep city_index :: %{{String.t(), String.t(), String.t() | nil} => non_neg_integer()}
 
   @doc """
   Parses `utf_ken_all.csv` (UTF-8) into `{postal_code, row}` pairs, one per line.
@@ -24,7 +19,7 @@ defmodule Yubin.Build do
   Raises when the line count and the parsed row count differ, or when a row's prefecture
   name does not match its local government code.
   """
-  @spec ken_all(binary()) :: [{String.t(), row()}]
+  @spec ken_all(binary()) :: [{String.t(), Table.row()}]
   def ken_all(csv) do
     csv
     |> parse()
@@ -42,7 +37,7 @@ defmodule Yubin.Build do
   The file has no kana for the city and town, so they are taken from the `ken_all/1` rows
   with the same names, and are `nil` when those rows have no single reading.
   """
-  @spec jigyosyo(binary(), [{String.t(), row()}]) :: [{String.t(), row()}]
+  @spec jigyosyo(binary(), [{String.t(), Table.row()}]) :: [{String.t(), Table.row()}]
   def jigyosyo(csv, ken_all_rows) do
     kana = kana_index(ken_all_rows)
 
@@ -64,13 +59,13 @@ defmodule Yubin.Build do
   The term is a map with `:format`, `:data_version`, `:source_rows` (line count of each
   source file) and the fields of `pack/1`. Rows keep their source order, area rows first.
   """
-  @spec encode([{String.t(), row()}], [{String.t(), row()}], Date.t()) :: binary()
+  @spec encode([{String.t(), Table.row()}], [{String.t(), Table.row()}], Date.t()) :: binary()
   def encode(ken_all_rows, jigyosyo_rows, %Date{} = data_version) do
     entries = (ken_all_rows ++ jigyosyo_rows) |> Enum.group_by(&elem(&1, 0), &elem(&1, 1)) |> Enum.sort()
 
     term =
       Map.merge(pack(entries), %{
-        format: @format,
+        format: Table.format(),
         data_version: data_version,
         source_rows: %{ken_all: length(ken_all_rows), jigyosyo: length(jigyosyo_rows)}
       })
@@ -95,15 +90,21 @@ defmodule Yubin.Build do
     * `:business` - `<<town, town_kana, business_name, street>>`
 
   A `nil` string has size 0.
+
+  Raises when a string is longer than its size allows, or when there are over 65,536 cities.
   """
-  @spec pack([{String.t(), [row()]}]) :: %{cities: tuple(), index: binary(), rows: binary()}
+  @spec pack([{String.t(), [Table.row()]}]) :: Table.data()
   def pack(entries) do
     cities = Enum.uniq(for {_code, rows} <- entries, row <- rows, do: {elem(row, 1), elem(row, 2), elem(row, 3)})
     city_index = cities |> Enum.with_index() |> Map.new()
 
+    if map_size(city_index) > @max_cities do
+      raise "#{map_size(city_index)} cities, over the #{@max_cities} that a 16-bit city index allows"
+    end
+
     {index, rows, size} =
       Enum.reduce(entries, {[], [], 0}, fn {code, rows}, {index, acc, offset} ->
-        packed = rows |> Enum.map(&pack_row(&1, city_index)) |> IO.iodata_to_binary()
+        packed = rows |> Enum.map(&pack_row(&1, code, city_index)) |> IO.iodata_to_binary()
         {[<<String.to_integer(code)::24, offset::32>> | index], [packed | acc], offset + byte_size(packed)}
       end)
 
@@ -114,36 +115,46 @@ defmodule Yubin.Build do
     }
   end
 
-  defp pack_row({:area, pref, city, city_kana, town, town_kana, note, nil, nil, nil}, city_index) do
+  @spec pack_row(Table.row(), String.t(), city_index()) :: iodata()
+  defp pack_row({:area, pref, city, city_kana, town, town_kana, note, nil, nil, nil}, code, city_index) do
     header = <<0::6, nil?(town_kana)::1, nil?(note)::1, pack_city(city_index, pref, city, city_kana)::binary>>
-    [header, string_size(town), string_size(town_kana), string_size(note, 16), town, town_kana || "", note || ""]
-  end
-
-  defp pack_row({:building, pref, city, city_kana, town, town_kana, note, floor, nil, nil}, city_index)
-       when floor in 1..255 or is_nil(floor) do
-    header = <<1::6, nil?(town_kana)::1, nil?(note)::1, pack_city(city_index, pref, city, city_kana)::binary>>
 
     [
       header,
-      floor || 0,
-      string_size(town),
-      string_size(town_kana),
-      string_size(note, 16),
+      string_size(code, :town, town),
+      string_size(code, :town_kana, town_kana),
+      string_size(code, :note, note, 16),
       town,
       town_kana || "",
       note || ""
     ]
   end
 
-  defp pack_row({:business, pref, city, city_kana, town, town_kana, nil, nil, name, street}, city_index) do
+  defp pack_row({:building, pref, city, city_kana, town, town_kana, note, floor, nil, nil}, code, city_index)
+       when floor in 1..255 or is_nil(floor) do
+    header = <<1::6, nil?(town_kana)::1, nil?(note)::1, pack_city(city_index, pref, city, city_kana)::binary>>
+
+    [
+      header,
+      floor || 0,
+      string_size(code, :town, town),
+      string_size(code, :town_kana, town_kana),
+      string_size(code, :note, note, 16),
+      town,
+      town_kana || "",
+      note || ""
+    ]
+  end
+
+  defp pack_row({:business, pref, city, city_kana, town, town_kana, nil, nil, name, street}, code, city_index) do
     header = <<2::6, nil?(town_kana)::1, 1::1, pack_city(city_index, pref, city, city_kana)::binary>>
 
     [
       header,
-      string_size(town),
-      string_size(town_kana),
-      string_size(name),
-      string_size(street),
+      string_size(code, :town, town),
+      string_size(code, :town_kana, town_kana),
+      string_size(code, :business_name, name),
+      string_size(code, :street, street),
       town,
       town_kana || "",
       name,
@@ -151,21 +162,28 @@ defmodule Yubin.Build do
     ]
   end
 
-  defp pack_city(city_index, pref, city, city_kana) do
-    case Map.fetch!(city_index, {pref, city, city_kana}) do
-      index when index <= 0xFFFF -> <<index::16>>
-    end
-  end
+  @spec pack_city(city_index(), String.t(), String.t(), String.t() | nil) :: binary()
+  defp pack_city(city_index, pref, city, city_kana), do: <<Map.fetch!(city_index, {pref, city, city_kana})::16>>
 
+  @spec nil?(String.t() | nil) :: 0 | 1
   defp nil?(nil), do: 1
   defp nil?(_string), do: 0
 
-  defp string_size(string, bits \\ 8)
-  defp string_size(nil, bits), do: <<0::size(bits)>>
-  defp string_size(string, bits) when byte_size(string) < 1 <<< bits, do: <<byte_size(string)::size(bits)>>
+  @spec string_size(String.t(), atom(), String.t() | nil, 8 | 16) :: binary()
+  defp string_size(code, field, string, bits \\ 8)
+  defp string_size(_code, _field, nil, bits), do: <<0::size(bits)>>
 
+  defp string_size(_code, _field, string, bits) when byte_size(string) < 1 <<< bits,
+    do: <<byte_size(string)::size(bits)>>
+
+  defp string_size(code, field, string, bits) do
+    raise "#{code}: #{field} is #{byte_size(string)} bytes, over the #{(1 <<< bits) - 1} that its size allows"
+  end
+
+  @spec parse(binary()) :: [[String.t()]]
   defp parse(csv), do: Yubin.Build.CSV.parse_string(csv, skip_headers: false)
 
+  @spec check_count!([{String.t(), Table.row()}], binary(), String.t()) :: [{String.t(), Table.row()}]
   defp check_count!(rows, csv, file) do
     lines = csv |> :binary.matches("\n") |> length()
     lines = if String.ends_with?(csv, "\n"), do: lines, else: lines + 1
@@ -177,6 +195,7 @@ defmodule Yubin.Build do
     rows
   end
 
+  @spec prefecture_code!(String.t(), String.t()) :: String.t()
   defp prefecture_code!(<<pref_code::binary-size(2), _::binary-size(3)>> = jis, name) do
     case Prefecture.from_code(pref_code) do
       %Prefecture{name: ^name} -> pref_code
@@ -185,6 +204,7 @@ defmodule Yubin.Build do
   end
 
   # Maps {pref_code, city} and {pref_code, city, town} to the kana, for names with one reading.
+  @spec kana_index([{String.t(), Table.row()}]) :: %{tuple() => String.t() | nil}
   defp kana_index(ken_all_rows) do
     ken_all_rows
     |> Enum.reduce(%{}, fn {_code, row}, acc ->
@@ -201,6 +221,7 @@ defmodule Yubin.Build do
     |> Map.new()
   end
 
+  @spec add_reading(%{tuple() => [String.t() | nil]}, tuple(), String.t() | nil) :: %{tuple() => [String.t() | nil]}
   defp add_reading(acc, key, kana) do
     Map.update(acc, key, [kana], fn readings ->
       if kana in readings, do: readings, else: [kana | readings]

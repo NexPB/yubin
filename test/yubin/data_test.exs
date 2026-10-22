@@ -11,7 +11,7 @@ defmodule Yubin.DataTest do
   defp count(rows, kinds), do: Enum.count(rows, fn {_code, row} -> elem(row, 0) in kinds end)
 
   test "every source row is in the build", %{data: data, rows: rows} do
-    assert data.format == 3
+    assert data.format == Yubin.Table.format()
     assert count(rows, [:area, :building]) == data.source_rows.ken_all
     assert count(rows, [:business]) == data.source_rows.jigyosyo
     assert length(rows) == data.source_rows.ken_all + data.source_rows.jigyosyo

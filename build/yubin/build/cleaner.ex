@@ -28,9 +28,11 @@ defmodule Yubin.Build.Cleaner do
     end
   end
 
+  @spec whole_city() :: cleaned()
   defp whole_city, do: %{kind: :area, town: "", town_kana: "", note: nil, floor: nil}
 
   # 滋賀県犬上郡多賀町 has a real town named 一円, so the prefix must be the city name.
+  @spec whole_village?(String.t(), String.t()) :: boolean()
   defp whole_village?(city, town) do
     case String.split(town, "一円") do
       [village, ""] when village != "" -> String.ends_with?(city, village)
@@ -38,6 +40,7 @@ defmodule Yubin.Build.Cleaner do
     end
   end
 
+  @spec building(String.t(), String.t()) :: cleaned()
   defp building(town, town_kana) do
     case Regex.named_captures(@floor, town) do
       %{"name" => name, "floor" => floor} ->
@@ -48,10 +51,12 @@ defmodule Yubin.Build.Cleaner do
     end
   end
 
+  @spec parse_floor(String.t()) :: pos_integer() | nil
   defp parse_floor(""), do: nil
   defp parse_floor(digits), do: digits |> :unicode.characters_to_nfkc_binary() |> String.to_integer()
 
   # The kana carries the same brackets in kana ("（１カイ）"), or none for the Kyoto street directions.
+  @spec bracket(String.t(), String.t()) :: cleaned()
   defp bracket(town, town_kana) do
     kana = town_kana |> String.split("（", parts: 2) |> hd()
 

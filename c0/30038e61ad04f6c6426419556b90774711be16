@@ -1,0 +1,21 @@
+README.md
+  s_5a4b9ad68a8820::t_56b270776d5b46 68
+  s_5a4b9ad68a8820::t_20a452778c04bf 3-46,55-56,60-62,66
+  s_5a4b9ad68a8820::t_f20e28bfb7e232 67
+---
+{
+  "schema_version": "authorship/3.0.0",
+  "git_ai_version": "1.7.5",
+  "base_commit_sha": "c030038e61ad04f6c6426419556b90774711be16",
+  "prompts": {},
+  "sessions": {
+    "s_5a4b9ad68a8820": {
+      "agent_id": {
+        "tool": "claude",
+        "id": "2891b058-12ad-477c-9d1a-21d2bc82e7db",
+        "model": "claude-opus-5-5"
+      },
+      "human_author": "NexPB <1289189+NexPB@users.noreply.github.com>"
+    }
+  }
+}

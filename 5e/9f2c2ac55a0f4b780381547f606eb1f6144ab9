@@ -1,0 +1,33 @@
+build/mix/tasks/yubin.build.ex
+  s_39ef99d7aa8b20::t_b4baefd394a832 54,59-63
+build/yubin/build.ex
+  s_39ef99d7aa8b20::t_22383c3780d445 118,124,139,154,188
+  s_39ef99d7aa8b20::t_943ac138ece282 46-47
+  s_39ef99d7aa8b20::t_28f56e2a29b02c 68-69,75
+  s_39ef99d7aa8b20::t_bf5b51f99d38ed 189
+lib/yubin/table.ex
+  s_39ef99d7aa8b20::t_21a30c780ff6f8 28,32
+  s_39ef99d7aa8b20::t_dbd6d5b912dc40 47,57,67,102
+bench/decisions.exs
+  s_39ef99d7aa8b20::t_e62366e36012f5 19-20,24-25
+  s_39ef99d7aa8b20::t_e247579c67badf 173-178
+  s_39ef99d7aa8b20::t_32751644ed6843 102,104,110,112-113,116
+test/yubin/build_test.exs
+  s_39ef99d7aa8b20::t_b7e83474f61edd 6,32,41,50,55,62,69,76,83,96,105-107,112-114,123,130,149,154,157
+---
+{
+  "schema_version": "authorship/3.0.0",
+  "git_ai_version": "1.7.5",
+  "base_commit_sha": "5e9f2c2ac55a0f4b780381547f606eb1f6144ab9",
+  "prompts": {},
+  "sessions": {
+    "s_39ef99d7aa8b20": {
+      "agent_id": {
+        "tool": "claude",
+        "id": "f5a7c4fc-5d2c-4d9c-a6e0-cd43e4d34750",
+        "model": "claude-opus-5-5"
+      },
+      "human_author": "NexPB <1289189+NexPB@users.noreply.github.com>"
+    }
+  }
+}

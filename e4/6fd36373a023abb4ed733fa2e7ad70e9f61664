@@ -1,0 +1,19 @@
+README.md
+  s_e0ba334531ca98::t_6311fa8d0152d0 12-13
+---
+{
+  "schema_version": "authorship/3.0.0",
+  "git_ai_version": "1.7.5",
+  "base_commit_sha": "e46fd36373a023abb4ed733fa2e7ad70e9f61664",
+  "prompts": {},
+  "sessions": {
+    "s_e0ba334531ca98": {
+      "agent_id": {
+        "tool": "claude",
+        "id": "99c2227a-8583-4708-b3a6-b478aab914f6",
+        "model": "claude-opus-5-5"
+      },
+      "human_author": "NexPB <1289189+NexPB@users.noreply.github.com>"
+    }
+  }
+}
